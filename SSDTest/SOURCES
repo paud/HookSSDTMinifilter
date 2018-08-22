@@ -1,0 +1,10 @@
+TARGETNAME = zer0m0n
+TARGETPATH = OBJ
+TARGETTYPE = DRIVER
+DRIVERTYPE = FS
+
+TARGETLIBS= $(TARGETLIBS) \
+            $(IFSKIT_LIB_PATH)\fltMgr.lib \
+			$(IFSKIT_LIB_PATH)\Rtlver.lib
+
+SOURCES = comm.c monitor.c hook_reg.c hook_process.c hook_file.c hook_misc.c main.c hooking.c utils.c query_information.c 
