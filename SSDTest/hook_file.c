@@ -499,8 +499,6 @@ NTSTATUS Hooked_NtOpenFile(__out PHANDLE FileHandle,
 	full_path.Buffer = NULL;
 	kObjectName.Buffer = NULL;
 
-	Dbg("Call NtOpenFile Enter! wow~~~Cool!!!\n");
-
 	PAGED_CODE();
 	
 	currentProcessId = (ULONG)PsGetCurrentProcessId();
@@ -612,8 +610,6 @@ NTSTATUS Hooked_NtDeleteFile(__in POBJECT_ATTRIBUTES ObjectAttributes)
 	UNICODE_STRING kObjectName;
 	UNICODE_STRING file_to_dump;
 
-	Dbg("Call NtDeleteFile() Enter\n");
-
 	PAGED_CODE();
 	
 	currentProcessId = (ULONG)PsGetCurrentProcessId();
@@ -714,6 +710,10 @@ NTSTATUS Hooked_NtReadFile(__in HANDLE FileHandle,
 	
 	currentProcessId = (ULONG)PsGetCurrentProcessId();
 	statusCall = Orig_NtReadFile(FileHandle, Event, ApcRoutine, ApcContext, IoStatusBlock, Buffer, Length, ByteOffset, Key);
+
+	//modified by simpower91 for debug
+	//Dbg(" new Call NtReadFile Enter! wow~~~Cool!!!\n");
+	//SendLogs(currentProcessId, SIG_ntdll_NtReadFile, "Call NtReadFile Enter! wow~~~Cool!!!\n");
 	
 	if(IsProcessInList(currentProcessId, pMonitoredProcessListHead) && (ExGetPreviousMode() != KernelMode))
 	{
@@ -944,6 +944,10 @@ NTSTATUS Hooked_NtWriteFile(__in HANDLE FileHandle,
 
 	currentProcessId = (ULONG)PsGetCurrentProcessId();
 	statusCall = Orig_NtWriteFile(FileHandle, Event, ApcRoutine, ApcContext, IoStatusBlock, Buffer, Length, ByteOffset, Key);
+
+	//modified by simpower91 for debug
+	//Dbg("new Call NtWriteFile() Enter\n");
+	//SendLogs(currentProcessId, SIG_ntdll_NtWriteFile,"Call NtWriteFile() Enter\n");
 	
 	if(IsProcessInList(currentProcessId, pMonitoredProcessListHead) && (ExGetPreviousMode() != KernelMode))
 	{
