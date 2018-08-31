@@ -205,8 +205,8 @@ PVOID GetKernelBase()
 		if(NT_SUCCESS(ZwQuerySystemInformation(SystemModuleInformation, pBuffer, ulNeededSize, &ulNeededSize)))
 		{
 			pSystemModuleInformation = (PSYSTEM_MODULE_INFORMATION)pBuffer;
-			pSystemModule = &pSystemModuleInformation->Modules[0];
-			imgBaseAddr = pSystemModule->Base;
+			pSystemModule = &pSystemModuleInformation->Modules[0]; //ntoskrnl.exeÄ£¿é
+			imgBaseAddr = pSystemModule->Base; //ÄÚºË»ùÖ·
 			return imgBaseAddr;
 		}
 	}
@@ -222,10 +222,13 @@ ULONGLONG GetKeServiceDescriptorTable64()
 
 	while ( ++pStartSearchAddress < pEndSearchAddress )
 	{
-		if ( (*(PULONG)pStartSearchAddress & 0xFFFFFF00) == 0x83f70000 )
+		//if ((*(PULONG)pStartSearchAddress & 0xFFFFFF00) == 0x83f70000)
+		if ((*(PULONG)pStartSearchAddress & 0x00FFFFFF) == 0x158d4c)
 		{
-			pFindCodeAddress = (PULONG)(pStartSearchAddress - 12);
-			return (ULONG_PTR)pFindCodeAddress + (((*(PULONG)pFindCodeAddress)>>24)+7) + (ULONG_PTR)(((*(PULONG)(pFindCodeAddress+1))&0x0FFFF)<<8); 
+			//pFindCodeAddress = (PULONG)(pStartSearchAddress - 12);
+			pFindCodeAddress = (PULONG)(pStartSearchAddress + 3);
+			//return (ULONG_PTR)pFindCodeAddress + (((*(PULONG)pFindCodeAddress) >> 24) + 7) + (ULONG_PTR)(((*(PULONG)(pFindCodeAddress + 1)) & 0x0FFFF) << 8);
+			return ((ULONG_PTR)pFindCodeAddress-3 + 7) + ((LONG)(*(PULONG)pFindCodeAddress));
 		}
 	}
 	return 0;
