@@ -176,7 +176,10 @@ PVOID GetEndOfTextSection(__in PVOID moduleBase)
 	for(i=0; i<NumberOfSections; i++)
 	{
 		// this is the .text section
-		if(pSectionHeader->Characteristics & IMAGE_SCN_MEM_EXECUTE)
+		//modified by simpower91 由于SSDT加密后偏移地址不能为负数，因此searchAddr必须要在SSDT之后
+		//然而SSDT却在.rdata区段，SSDT所指向的入口有的在PAGE区段，理论上放在.rdata之后的可X区段都可以，PAGE属于可交换分页，位于PAGELK之后。
+		//if(pSectionHeader->Characteristics & IMAGE_SCN_MEM_EXECUTE)
+		if ((pSectionHeader->Characteristics & IMAGE_SCN_MEM_EXECUTE)&&(strcmp(pSectionHeader->Name,"PAGELK")==0))
 		{
 			begin_text = (PVOID)(pSectionHeader->VirtualAddress + (ULONG_PTR)moduleBase);
 			end_text = (PVOID)((ULONG_PTR)begin_text + pSectionHeader->Misc.VirtualSize);
@@ -261,11 +264,10 @@ VOID HookSSDT()
 	Install_Hook(GetSyscallNumber(pImageExportDirectory, "ZwReadFile", offsetSyscall), (PVOID)Hooked_NtReadFile, (PVOID*)&Orig_NtReadFile, pStartSearchAddress, KiServiceTable);
 	Install_Hook(GetSyscallNumber(pImageExportDirectory, "ZwDeleteFile", offsetSyscall), (PVOID)Hooked_NtDeleteFile, (PVOID*)&Orig_NtDeleteFile, pStartSearchAddress, KiServiceTable);
 	Install_Hook(GetSyscallNumber(pImageExportDirectory, "ZwOpenFile", offsetSyscall), (PVOID)Hooked_NtOpenFile, (PVOID*)&Orig_NtOpenFile, pStartSearchAddress, KiServiceTable);
-	Install_Hook(GetSyscallNumber(pImageExportDirectory, "ZwSetInformationFile", offsetSyscall), (PVOID)Hooked_NtSetInformationFile, (PVOID*)&Orig_NtSetInformationFile, pStartSearchAddress, KiServiceTable);
 	Install_Hook(GetSyscallNumber(pImageExportDirectory, "ZwClose", offsetSyscall), (PVOID)Hooked_NtClose, (PVOID*)&Orig_NtClose, pStartSearchAddress, KiServiceTable);
 	Install_Hook(GetSyscallNumber(pImageExportDirectory, "ZwDeviceIoControlFile", offsetSyscall), (PVOID)Hooked_NtDeviceIoControlFile, (PVOID*)&Orig_NtDeviceIoControlFile, pStartSearchAddress, KiServiceTable);	
 	Install_Hook(GetSyscallNumber(pImageExportDirectory, "ZwQueryAttributesFile", offsetSyscall), (PVOID)Hooked_NtQueryAttributesFile, (PVOID*)&Orig_NtQueryAttributesFile, pStartSearchAddress, KiServiceTable);
-	
+	//the up is ok
 	Install_Hook(GetSyscallNumber(pImageExportDirectory, "ZwQueryValueKey", offsetSyscall), (PVOID)Hooked_NtQueryValueKey, (PVOID*)&Orig_NtQueryValueKey, pStartSearchAddress, KiServiceTable);
 	Install_Hook(GetSyscallNumber(pImageExportDirectory, "ZwOpenKey", offsetSyscall), (PVOID)Hooked_NtOpenKey, (PVOID*)&Orig_NtOpenKey, pStartSearchAddress, KiServiceTable);
 	Install_Hook(GetSyscallNumber(pImageExportDirectory, "ZwOpenKeyEx", offsetSyscall), (PVOID)Hooked_NtOpenKeyEx, (PVOID*)&Orig_NtOpenKeyEx, pStartSearchAddress, KiServiceTable);
@@ -282,6 +284,7 @@ VOID HookSSDT()
 	Install_Hook(GetSyscallNumber(pImageExportDirectory, "ZwReadVirtualMemory", offsetSyscall), (PVOID)Hooked_NtReadVirtualMemory, (PVOID*)&Orig_NtReadVirtualMemory, pStartSearchAddress, KiServiceTable);
 	Install_Hook(GetSyscallNumber(pImageExportDirectory, "ZwMapViewOfSection", offsetSyscall), (PVOID)Hooked_NtMapViewOfSection, (PVOID*)&Orig_NtMapViewOfSection, pStartSearchAddress, KiServiceTable);
 	Install_Hook(GetSyscallNumber(pImageExportDirectory, "ZwOpenProcess", offsetSyscall), (PVOID)Hooked_NtOpenProcess, (PVOID*)&Orig_NtOpenProcess, pStartSearchAddress, KiServiceTable);
+	return;
 	Install_Hook(GetSyscallNumber(pImageExportDirectory, "ZwResumeThread", offsetSyscall), (PVOID)Hooked_NtResumeThread, (PVOID*)&Orig_NtResumeThread, pStartSearchAddress, KiServiceTable);
 	Install_Hook(GetSyscallNumber(pImageExportDirectory, "ZwSetContextThread", offsetSyscall), (PVOID)Hooked_NtSetContextThread, (PVOID*)&Orig_NtSetContextThread, pStartSearchAddress, KiServiceTable);
 	Install_Hook(GetSyscallNumber(pImageExportDirectory, "ZwCreateThread", offsetSyscall), (PVOID)Hooked_NtCreateThread, (PVOID*)&Orig_NtCreateThread, pStartSearchAddress, KiServiceTable);
@@ -295,6 +298,9 @@ VOID HookSSDT()
 
 	Install_Hook(GetSyscallNumber(pImageExportDirectory, "ZwCreateMutant", offsetSyscall), (PVOID)Hooked_NtCreateMutant, (PVOID*)&Orig_NtCreateMutant, pStartSearchAddress, KiServiceTable);
 	Install_Hook(GetSyscallNumber(pImageExportDirectory, "ZwDelayExecution", offsetSyscall), (PVOID)Hooked_NtDelayExecution, (PVOID*)&Orig_NtDelayExecution, pStartSearchAddress, KiServiceTable);
+	return; //问题函数
+	Install_Hook(GetSyscallNumber(pImageExportDirectory, "ZwSetInformationFile", offsetSyscall), (PVOID)Hooked_NtSetInformationFile, (PVOID*)&Orig_NtSetInformationFile, pStartSearchAddress, KiServiceTable);
+
 }
 
 VOID Install_Hook(__in ULONG syscall, 
@@ -327,6 +333,7 @@ VOID Install_Hook(__in ULONG syscall,
 		Dbg("Hooked_Func : %llx\n", hookedFunc);
 		// mov rax, @NewFunc; jmp rax
 		*(PULONGLONG)(jmp_to_newFunction+2) = (ULONGLONG)hookedFunc;
+
 		trampoline = SearchCodeCave(searchAddr);
 		Dbg("trampoline : %llx\n", trampoline);
 

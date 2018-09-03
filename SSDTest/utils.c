@@ -210,6 +210,11 @@ VOID CopyBuffer(__out PWCHAR dst,
 		{
 			if(i >= (BUFFER_LOG_MAX/2))
 				break;
+
+			//simpower91 add variable n  should be check too.
+			if (n >= (BUFFER_LOG_MAX / 2)-1)
+				break;
+			//simpower91 add end
 			
 			if(src[i] != 0x00)
 			{
