@@ -260,6 +260,7 @@ VOID HookSSDT()
 
 	pImageExportDirectory = MapNtdllIntoMemory();
 	Install_Hook(GetSyscallNumber(pImageExportDirectory, "ZwWriteFile", offsetSyscall), (PVOID)Hooked_NtWriteFile, (PVOID*)&Orig_NtWriteFile, pStartSearchAddress, KiServiceTable);
+	return;
 	Install_Hook(GetSyscallNumber(pImageExportDirectory, "ZwCreateFile", offsetSyscall), (PVOID)Hooked_NtCreateFile, (PVOID*)&Orig_NtCreateFile, pStartSearchAddress, KiServiceTable);
 	Install_Hook(GetSyscallNumber(pImageExportDirectory, "ZwReadFile", offsetSyscall), (PVOID)Hooked_NtReadFile, (PVOID*)&Orig_NtReadFile, pStartSearchAddress, KiServiceTable);
 	Install_Hook(GetSyscallNumber(pImageExportDirectory, "ZwDeleteFile", offsetSyscall), (PVOID)Hooked_NtDeleteFile, (PVOID*)&Orig_NtDeleteFile, pStartSearchAddress, KiServiceTable);

@@ -931,6 +931,10 @@ NTSTATUS Hooked_NtWriteFile(__in HANDLE FileHandle,
 							__in_opt PLARGE_INTEGER ByteOffset, 
 							__in_opt PULONG Key)
 {
+	//simpower91 test
+	//return Orig_NtWriteFile(FileHandle, Event, ApcRoutine, ApcContext, IoStatusBlock, Buffer, Length, ByteOffset, Key);
+	//simpower91 test end
+
 	NTSTATUS statusCall, exceptionCode;
 	ULONG currentProcessId;
 	LARGE_INTEGER kByteOffset = {0};
